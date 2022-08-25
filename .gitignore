@@ -1,0 +1,6 @@
+*.ipynb_checkpoints
+*.ipynb
+*.json
+*.pyc
+lib
+bin
