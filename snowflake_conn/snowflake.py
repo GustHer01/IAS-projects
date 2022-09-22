@@ -1,8 +1,10 @@
 import os
 import snowflake.connector as sc
+from dotenv import find_dotenv, load_dotenv
 
 class SnowflakeConn():
-    user=os.getenv('snowflake_user')
+    load_dotenv(find_dotenv())
+    user='ghernandez@integralads.com'
     host=os.getenv('snowflake_host')
     account=os.getenv('snowflake_account')
     region = os.getenv('snowflake_region')
@@ -13,6 +15,7 @@ class SnowflakeConn():
     authenticator="externalbrowser"
     
     def __init__(self):
+    # class constructor and initiating required data
         self.connection = sc.connect(user=SnowflakeConn.user,
                                      host=SnowflakeConn.host,
                                      account=SnowflakeConn.account,
@@ -22,9 +25,11 @@ class SnowflakeConn():
                                      warehouse=SnowflakeConn.warehouse,  
                                      schema =SnowflakeConn.schema,
                                      authenticator=SnowflakeConn.authenticator)
+    # starts connection to snowflake
     def start_connection(self):
         self.cursor = self.connection.cursor()
     
+    # executes query string
     def _execute_query(self, query):
         result = self.cursor.execute(query).fetchall()
         return result
