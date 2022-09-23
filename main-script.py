@@ -135,7 +135,7 @@ def analize_partners(dates,yesterday,today):
     for x,y in partners.items():
         
         # starts athena query with the following query string
-        query_String = f"SELECT count(distinct concat(impressionId, '---', cast(timestamp as varchar))) FROM partner_raw.{x} where type = 'impression' and ((utcdate = '{dates[0]}' and utchour in ('04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23')) or (utcdate = '{dates[1]}' and utchour in ('00', '01', '02', '03')))"
+        query_String = f"SELECT count(distinct concat(impressionId, '---', cast(timestamp as varchar))) FROM {os.getenv('athena_table')}.{x} where type = 'impression' and ((utcdate = '{dates[0]}' and utchour in ('04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23')) or (utcdate = '{dates[1]}' and utchour in ('00', '01', '02', '03')))"
         # starting query
         response = start_query(athena_client, query_String)
         # getting the execution result
