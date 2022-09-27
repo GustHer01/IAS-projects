@@ -4,7 +4,7 @@ from dotenv import find_dotenv, load_dotenv
 
 class SnowflakeConn():
     load_dotenv(find_dotenv())
-    user='ghernandez@integralads.com'
+    user=os.getenv('snowflake_user')
     host=os.getenv('snowflake_host')
     account=os.getenv('snowflake_account')
     region = os.getenv('snowflake_region')

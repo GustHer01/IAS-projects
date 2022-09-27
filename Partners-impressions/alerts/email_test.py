@@ -7,10 +7,6 @@ class email_alert():
     def __init__(self):
         self.email_sender = os.getenv('snowflake_user')
         self.email_password = os.getenv("gmail_pass")
-        #self.email_receiver = os.getenv('email_receiver')
-        #self.email_receiver = 'pmi-discrepancies@integralads.com'
-        #self.email_receiver = 'dfuentes@integralads.com,jcescobar@integralads.com'
-        #self.email_receiver = 'techacctmanagement@integralads.com'
         self.email_receiver = os.getenv('email_receiver')
         self.context = ssl.create_default_context()
 
