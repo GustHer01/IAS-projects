@@ -169,6 +169,7 @@ if __name__ == "__main__":
     
     # date to process
     day = date.today() - timedelta(days = 1)
+
     day_after = day + timedelta(days = 1)
     athena_formatted_dates = get_date(day, day_after)
     email_day = day.strftime('%Y-%m-%d')

@@ -3,6 +3,3 @@
 *.json
 *.pyc
 *.env
-lib
-bin
-IAS-env/

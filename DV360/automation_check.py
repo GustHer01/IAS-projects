@@ -1,13 +1,13 @@
 import csv
 import email
 import sys
-import logging
+#import logging
 from cleaning import cleaning_csv
 from upload_to_s3 import upload_file
 from pull_from_s3 import pull_file
 from alerts.emails import email_alert
 from dotenv import find_dotenv, load_dotenv
-from logs.logger import logger as lg
+#from logs.logger import logger as lg
 
 def read_file():
     file = open('ias_rates.csv')
@@ -19,7 +19,7 @@ def read_file():
     return first_line, last_line
 
 def check_line(first,last):
-    logger = lg.logger(logging.DEBUG)
+    #logger = lg.logger(logging.DEBUG)
     errors, cleaning_string = [], " "
     new_alert = email_alert()
 
@@ -46,11 +46,11 @@ def check_line(first,last):
             errors.append(columns[x])
 
     if ''  in first_line and ''  in last_line:
-        logger.info('Extra commas found, cleaning file...')
+        #logger.info('Extra commas found, cleaning file...')
         cleaning_csv('ias_rates.csv')
-        logger.info('Uploading to s3')
+        #logger.info('Uploading to s3')
         cleaning_string = 'CSV file cleaned and uploaded successfully'
-        #upload_file('ias_rates.csv')
+        upload_file('ias_rates.csv')
     
     
     if errors:
