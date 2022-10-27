@@ -12,6 +12,7 @@ from GoogleSheets.google_sheets import GoogleSheet
 from datetime import date, timedelta
 from tools.calculations import *
 import tools.logger as lg
+from tools.athena import athena_connection
 
 # Given a df with the impressions from athena and snowflake check for discreps between the sources
 def discreps_alert(partners, alert_obj):
@@ -40,65 +41,6 @@ def get_date(yesterday ,today):
 
     return format_dates
 
-# Setting the service to use for boto3 library
-def set_client():
-    a_client = boto3.client('athena')
-    return a_client
-
-# Starts an athena query
-def start_query(client, query_String):
-    logger = lg.logger(logging.DEBUG)
-    try:
-        response = client.start_query_execution(
-        QueryString = query_String,
-        QueryExecutionContext={
-            'Catalog': 'AwsDataCatalog'
-        },
-        ResultConfiguration={
-            'OutputLocation': os.getenv('s3_bucket') ,
-        },
-        WorkGroup = 'gps'
-        )
-        return response
-    except ClientError as error:
-        logger.error('Query execution start failed')
-        raise error
-
-
-# Get the result of the execution
-def get_execution(client,response):
-    logger = lg.logger(logging.DEBUG)
-    try:
-        get_exec = client.get_query_execution(
-            QueryExecutionId=response['QueryExecutionId']
-        )
-    
-        status = get_exec['QueryExecution']['Status']['State']
-    
-        # if i ask for the results inmediately i'll get an error because the query
-        # takes some time to run
-        while  status != 'SUCCEEDED':
-            get_exec = client.get_query_execution(
-                QueryExecutionId=response['QueryExecutionId']
-            )
-    
-            status = get_exec['QueryExecution']['Status']['State']
-
-        response_results = client.get_query_results(
-            QueryExecutionId=response['QueryExecutionId']
-
-        )
-        return response_results
-    except ClientError as error:
-        logger.info('Query execution Failed')
-        raise error
-
-    
-#get imps from athena response and creates a pandas dataframe with it
-def get_imps(response, response_results):
-    athena_imps = response_results['ResultSet']['Rows'][1]['Data'][0]['VarCharValue']
-    return athena_imps
-
 # calculates total of impressions for yesterdays date
 def get_total_imps(imps_table):
     converted = imps_table.iloc[4:28,0]
@@ -125,8 +67,8 @@ def analize_partners(dates,yesterday,today):
     partner_imps = pd.DataFrame(columns = ['Date','Partner', 'Partner_raw', 'Snowflake', '%_diff_between_Snowflake_and_partner_raw'])
 
     # setting the client
-    athena_client = set_client()
-    
+    #athena_client = set_client()
+    athena_obj = athena_connection()
     #starting snowflake connection
     snowflake_conn = SnowflakeConn()
     cursor = snowflake_conn.start_connection()
@@ -137,10 +79,11 @@ def analize_partners(dates,yesterday,today):
         # starts athena query with the following query string
         query_String = f"SELECT count(distinct concat(impressionId, '---', cast(timestamp as varchar))) FROM {os.getenv('athena_table')}.{x} where type = 'impression' and ((utcdate = '{dates[0]}' and utchour in ('04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23')) or (utcdate = '{dates[1]}' and utchour in ('00', '01', '02', '03')))"
         # starting query
-        response = start_query(athena_client, query_String)
+        response = athena_obj.start_query(query_String)
         # getting the execution result
-        response_results = get_execution(athena_client, response)
-        total_imps = get_imps(response, response_results)
+        response_results = athena_obj.get_execution(response)
+        total_imps = athena_obj.get_imps(response_results)
+        
         logger.info(f'Partner processed: {x} ')
         logger.info(f'Impressions from athena: {total_imps}')
         
