@@ -1,6 +1,8 @@
 import os
 import boto3
 from botocore.exceptions import ClientError
+from tools import logger as lg
+import logging
 
 class athena_connection():
     def __init__(self):
@@ -16,7 +18,7 @@ class athena_connection():
             ResultConfiguration={
                 'OutputLocation': os.getenv('s3_bucket') ,
             },
-            WorkGroup = 'gps'
+            WorkGroup = 'gps-partner'
             )
             return response
         except ClientError as error:
@@ -24,7 +26,7 @@ class athena_connection():
             raise error
 # Get the result of the execution
     def get_execution(self,response):
-        #logger = lg.logger(logging.DEBUG)
+        logger = lg.logger(logging.DEBUG)
         try:
             get_exec = self.client.get_query_execution(
                 QueryExecutionId=response['QueryExecutionId']
@@ -32,14 +34,14 @@ class athena_connection():
     
             status = get_exec['QueryExecution']['Status']['State']
     
-            # if i ask for the results inmediately i'll get an error because the query
-            # takes some time to run
-            while  status != 'SUCCEEDED':
+            while status != 'SUCCEEDED' and status != 'FAILED':
                 get_exec = self.client.get_query_execution(
                     QueryExecutionId=response['QueryExecutionId']
                 )
     
                 status = get_exec['QueryExecution']['Status']['State']
+            if status == 'FAILED':
+                logger.error('QUERY FAILED')
 
             response_results = self.client.get_query_results(
                 QueryExecutionId=response['QueryExecutionId']
@@ -47,7 +49,7 @@ class athena_connection():
             )
             return response_results
         except ClientError as error:
-            #logger.info('Query execution Failed')
+            logger.info('Query execution Failed')
             raise error
     
     def get_imps(self, response_results):

@@ -63,7 +63,9 @@ def analize_partners(dates,yesterday,today):
     logger = lg.logger(logging.DEBUG)
     logger.info('Process analysis Started...')
     # setting manually the actual measuremente_source_id for snowflake
-    partners = {'snapchat': 10,'spotify': 19, 'pinterest': 11,'linkedin': 16,'yahoo': 5}
+    #partners = {'snapchat': 10,'spotify': 19, 'pinterest': 11,'linkedin': 16,'yahoo': 5}
+    partners = {'snapchat':[10,1,'snapchat'], 'spotify':[19,2,'general_events_v2'], 'pinterest': [11,2,'general_events_v1'], 'linkedin': [16,2,'general_events_v1'], 'yahoo':[5,1,'yahoo']}
+
     partner_imps = pd.DataFrame(columns = ['Date','Partner', 'Partner_raw', 'Snowflake', '%_diff_between_Snowflake_and_partner_raw'])
 
     # setting the client
@@ -77,7 +79,18 @@ def analize_partners(dates,yesterday,today):
     for x,y in partners.items():
         
         # starts athena query with the following query string
-        query_String = f"SELECT count(distinct concat(impressionId, '---', cast(timestamp as varchar))) FROM {os.getenv('athena_table')}.{x} where type = 'impression' and ((utcdate = '{dates[0]}' and utchour in ('04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23')) or (utcdate = '{dates[1]}' and utchour in ('00', '01', '02', '03')))"
+
+        if y[1] == 1:
+            query_String = f"""SELECT count(distinct concat(impressionId, '---', cast(timestamp as varchar))) 
+                               FROM {os.getenv('athena_db')}.{y[2]} 
+                               where type = 'impression' and ((utcdate = '{dates[0]}' and utchour in ('04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23')) 
+                               or (utcdate = '{dates[1]}' and utchour in ('00', '01', '02', '03')));"""
+        elif y[1] == 2:
+            query_String = f"""SELECT count(distinct concat("original.impressionId", '---', cast("original.timestamp" as varchar))) 
+                            FROM "{os.getenv('athena_db')}".{y[2]}
+                            where "original.type" = 'impression' and ((utcdate = '{dates[0]}'and utchour in ('04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23')) 
+                            or (utcdate = '{dates[1]}' and utchour in ('00', '01', '02', '03')))
+                            and sourceid = {y[0]};"""
         # starting query
         response = athena_obj.start_query(query_String)
         # getting the execution result
@@ -88,7 +101,7 @@ def analize_partners(dates,yesterday,today):
         logger.info(f'Impressions from athena: {total_imps}')
         
         #snowflake
-        snowflake_query = f"select HIT_DATE, SUM(IMPS) as IMPS from {os.getenv('snowflake_table')} where HIT_DATE = '{yesterday}' AND measurement_source_id = {y} group by HIT_DATE order by HIT_DATE ASC"
+        snowflake_query = f"select HIT_DATE, SUM(IMPS) as IMPS from {os.getenv('snowflake_table')} where HIT_DATE = '{yesterday}' AND measurement_source_id = {y[0]} group by HIT_DATE order by HIT_DATE ASC"
         results = snowflake_conn._execute_query(snowflake_query)
         if results == []:
             results = [(0,0)]
