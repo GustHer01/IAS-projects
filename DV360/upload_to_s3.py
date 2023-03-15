@@ -8,7 +8,7 @@ from logs.logger import logger as log
 load_dotenv()
 
 def upload_file(filename):
-    logger = log.logger(logging.DEBUG)
+    #logger = log.logger(logging.DEBUG)
     s3 = boto3.client(os.getenv('client'))
 
     try:
@@ -17,8 +17,8 @@ def upload_file(filename):
             Bucket=os.getenv('bucket_name'),
             Key=os.getenv('key_path')
         )
-        logger.info('File uploaded correctly')
+        #logger.info('File uploaded correctly')
     except ClientError as error:
-        logger.error('Unable to upload the file, please check path or credentials')
+        #logger.error('Unable to upload the file, please check path or credentials')
         raise error
 
